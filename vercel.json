@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "functions": {
+    "api/webhook/bot1.js": {
+      "maxDuration": 10,
+      "includeFiles": "config/packages.json"
+    },
+    "api/webhook/bot2.js": {
+      "maxDuration": 10,
+      "includeFiles": "config/packages.json"
+    }
+  }
+}

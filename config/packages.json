@@ -1,0 +1,31 @@
+{
+  "packages": [
+    {
+      "id": "basic",
+      "name": "Basic Package",
+      "description": "Basic channel access.",
+      "priceLabel": "",
+      "active": true,
+      "imageUrl": "",
+      "inviteLinkEnv": "PACKAGE_BASIC_INVITE_LINK"
+    },
+    {
+      "id": "premium",
+      "name": "Premium Package",
+      "description": "Premium channel access.",
+      "priceLabel": "",
+      "active": true,
+      "imageUrl": "",
+      "inviteLinkEnv": "PACKAGE_PREMIUM_INVITE_LINK"
+    },
+    {
+      "id": "vip",
+      "name": "VIP Package",
+      "description": "VIP channel access.",
+      "priceLabel": "",
+      "active": true,
+      "imageUrl": "",
+      "inviteLinkEnv": "PACKAGE_VIP_INVITE_LINK"
+    }
+  ]
+}

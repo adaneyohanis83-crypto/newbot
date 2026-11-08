@@ -1,0 +1,19 @@
+{
+  "name": "telegram-stars-bots",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test tests/packages.test.js tests/bots.test.js tests/webhook.test.js",
+    "typecheck": "tsc --noEmit",
+    "config:check": "node scripts/check-config.js",
+    "webhooks:set": "node scripts/set-webhooks.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "typescript": "^5.9.2"
+  }
+}

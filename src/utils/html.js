@@ -1,0 +1,11 @@
+// @ts-check
+
+/**
+ * @param {unknown} value
+ */
+export function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
