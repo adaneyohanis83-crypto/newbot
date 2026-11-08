@@ -316,4 +316,4 @@ After each redeployment, webhooks stay registered — you do not need to run `se
 | Webhook returns 401 | `BOT1_WEBHOOK_SECRET` / `BOT2_WEBHOOK_SECRET` mismatch between `.env` and Vercel env vars. |
 | Image not showing | `imageUrl` must be an `https://` URL, not a `t.me` URL. |
 #   n e w b o t  
- 
+ "# newbot" 

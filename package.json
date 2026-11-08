@@ -7,13 +7,16 @@
     "node": ">=20"
   },
   "scripts": {
+    "dev": "node src/server.js",
     "test": "node --test tests/packages.test.js tests/bots.test.js tests/webhook.test.js",
     "typecheck": "tsc --noEmit",
     "config:check": "node scripts/check-config.js",
     "webhooks:set": "node scripts/set-webhooks.js"
   },
   "devDependencies": {
+    "@types/express": "^4.17.21",
     "@types/node": "^22.19.0",
+    "express": "^4.21.2",
     "typescript": "^5.9.2"
   }
 }

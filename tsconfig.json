@@ -12,5 +12,6 @@
     "types": ["node"],
     "rootDir": "."
   },
-  "include": ["api/**/*.js", "src/**/*.js", "tests/**/*.js", "scripts/**/*.js", "config/packages.json"]
+  "include": ["api/**/*.js", "src/**/*.js", "tests/**/*.js", "scripts/**/*.js", "config/packages.json"],
+  "exclude": ["node_modules"]
 }
