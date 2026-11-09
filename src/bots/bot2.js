@@ -66,6 +66,12 @@ export async function handleBot2Update(update, ctx) {
   const text = message.text.trim();
   const payload = readStartCommand(text);
 
+  // Handle /rejoin command
+  if (/^\/rejoin(?:@\w+)?$/i.test(text)) {
+    await handleRejoin(message.chat.id, userId, ctx);
+    return;
+  }
+
   if (payload === null) {
     await ctx.api.sendMessage(
       message.chat.id,
