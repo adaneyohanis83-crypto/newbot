@@ -48,7 +48,7 @@ async function register(label, token, username, url, secret) {
   await callTelegram(token, "setWebhook", {
     url,
     secret_token: secret,
-    allowed_updates: ["message", "callback_query"],
+    allowed_updates: ["message", "callback_query", "pre_checkout_query"],
     drop_pending_updates: false,
   });
 

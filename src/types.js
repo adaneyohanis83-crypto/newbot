@@ -9,6 +9,17 @@
 /**
  * @typedef {Object} TelegramUser
  * @property {number} id
+ * @property {string} [username]
+ * @property {string} [first_name]
+ */
+
+/**
+ * @typedef {Object} TelegramSuccessfulPayment
+ * @property {string} currency
+ * @property {number} total_amount
+ * @property {string} invoice_payload
+ * @property {string} telegram_payment_charge_id
+ * @property {string} [provider_payment_charge_id]
  */
 
 /**
@@ -17,6 +28,7 @@
  * @property {string} [text]
  * @property {TelegramChat} chat
  * @property {TelegramUser} [from]
+ * @property {TelegramSuccessfulPayment} [successful_payment]
  */
 
 /**
@@ -28,10 +40,20 @@
  */
 
 /**
+ * @typedef {Object} TelegramPreCheckoutQuery
+ * @property {string} id
+ * @property {TelegramUser} from
+ * @property {string} currency
+ * @property {number} total_amount
+ * @property {string} invoice_payload
+ */
+
+/**
  * @typedef {Object} TelegramUpdate
  * @property {number} [update_id]
  * @property {TelegramMessage} [message]
  * @property {TelegramCallbackQuery} [callback_query]
+ * @property {TelegramPreCheckoutQuery} [pre_checkout_query]
  */
 
 /**

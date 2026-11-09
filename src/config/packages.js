@@ -4,16 +4,14 @@ import path from "node:path";
 import bundledCatalog from "../../config/packages.json" with { type: "json" };
 import {
   defaultInviteEnv,
+  defaultChannelEnv,
   isEnvKey,
-  isPaidInviteLink,
   isValidPackageId,
   sanitizeImageUrl,
 } from "../utils/validation.js";
 
 export class PackageConfigError extends Error {
-  /**
-   * @param {string} message
-   */
+  /** @param {string} message */
   constructor(message) {
     super(message);
     this.name = "PackageConfigError";
@@ -26,13 +24,15 @@ export class PackageConfigError extends Error {
  * @property {string} name
  * @property {string} description
  * @property {string} priceLabel
+ * @property {number} priceStars      — integer Stars for sendInvoice
  * @property {boolean} active
  * @property {string} imageUrl
- * @property {string} inviteLinkEnv
+ * @property {string} inviteLinkEnv   — kept for backward compat (unused in new flow)
+ * @property {string[]} channelEnvs   — env var names holding numeric channel IDs
  */
 
 /**
- * @typedef {PackageRecord & { inviteLink: string | null }} ResolvedPackage
+ * @typedef {PackageRecord & { channelIds: string[] }} ResolvedPackage
  */
 
 /**
@@ -49,12 +49,19 @@ export class PackageConfigError extends Error {
 
 const MAX_PACKAGES = 30;
 
-/**
- * @param {unknown} value
- * @param {number} max
- */
+/** @param {unknown} value @param {number} max */
 function clipText(value, max) {
   return String(value ?? "").replaceAll("\r", "").trim().slice(0, max);
+}
+
+/**
+ * Parse priceStars — must be a positive integer.
+ * Falls back to 0 (which means "not configured").
+ * @param {unknown} value
+ */
+function parsePriceStars(value) {
+  const n = parseInt(String(value ?? "0"), 10);
+  return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
 /**
@@ -78,15 +85,29 @@ export function sanitizePackages(source) {
     const name = clipText(raw.name, 80);
     if (!name) continue;
 
+    // channelEnvs — array of env key names pointing to numeric channel IDs
+    let channelEnvs = /** @type {string[]} */ ([]);
+    if (Array.isArray(raw.channelEnvs)) {
+      channelEnvs = raw.channelEnvs
+        .map((v) => clipText(v, 81))
+        .filter((v) => isEnvKey(v));
+    }
+    if (channelEnvs.length === 0) {
+      channelEnvs = [defaultChannelEnv(id)];
+    }
+
     const requestedEnv = clipText(raw.inviteLinkEnv, 81);
+
     packages.push({
       id,
       name,
       description: clipText(raw.description, 500),
       priceLabel: clipText(raw.priceLabel, 80),
+      priceStars: parsePriceStars(raw.priceStars),
       active: raw.active === true,
       imageUrl: sanitizeImageUrl(raw.imageUrl),
       inviteLinkEnv: isEnvKey(requestedEnv) ? requestedEnv : defaultInviteEnv(id),
+      channelEnvs,
     });
     seen.add(id);
     if (packages.length >= MAX_PACKAGES) break;
@@ -100,8 +121,8 @@ export function sanitizePackages(source) {
  */
 function extractPackageArray(source) {
   if (Array.isArray(source)) return source;
-  if (source && typeof source === "object" && Array.isArray(/** @type {{ packages?: unknown }} */ (source).packages)) {
-    return /** @type {{ packages: unknown[] }} */ (source).packages;
+  if (source && typeof source === "object" && Array.isArray(/** @type {any} */ (source).packages)) {
+    return /** @type {any} */ (source).packages;
   }
   throw new PackageConfigError("Package configuration must be an array or an object with a packages array");
 }
@@ -112,43 +133,28 @@ function extractPackageArray(source) {
  * @returns {ResolvedPackage}
  */
 export function resolvePackage(record, env) {
-  const raw = env[record.inviteLinkEnv];
-  const inviteLink = isPaidInviteLink(raw) ? raw.trim() : null;
-  return { ...record, inviteLink };
+  const channelIds = record.channelEnvs
+    .map((envKey) => (env[envKey] ?? "").trim())
+    .filter((v) => /^-?\d+$/.test(v));
+  return { ...record, channelIds };
 }
 
 /**
  * @param {ResolvedPackage} pkg
  */
 export function isPayable(pkg) {
-  return pkg.active === true && isPaidInviteLink(pkg.inviteLink);
+  return pkg.active === true && pkg.priceStars > 0 && pkg.channelIds.length > 0;
 }
 
 /**
  * @param {PackageRecord} record
  * @param {NodeJS.ProcessEnv} env
- * @returns {"missing" | "invalid" | "configured"}
+ * @returns {"missing"|"invalid"|"configured"}
  */
-export function inviteStatus(record, env) {
-  const raw = env[record.inviteLinkEnv];
-  if (typeof raw !== "string" || raw.trim() === "") return "missing";
-  return isPaidInviteLink(raw) ? "configured" : "invalid";
-}
-
-/**
- * @param {PackageRecord[]} packages
- * @param {NodeJS.ProcessEnv} env
- * @param {string} id
- */
-export function packagesSharingInvite(packages, env, id) {
-  const current = packages.find((pkg) => pkg.id === id);
-  if (!current) return [];
-  const raw = env[current.inviteLinkEnv];
-  if (!isPaidInviteLink(raw)) return [];
-  const normalized = raw.trim();
-  return packages
-    .filter((pkg) => pkg.id !== id && isPaidInviteLink(env[pkg.inviteLinkEnv]) && env[pkg.inviteLinkEnv]?.trim() === normalized)
-    .map((pkg) => pkg.id);
+export function channelStatus(record, env) {
+  const ids = record.channelEnvs.map((k) => (env[k] ?? "").trim()).filter(Boolean);
+  if (ids.length === 0) return "missing";
+  return ids.every((id) => /^-?\d+$/.test(id)) ? "configured" : "invalid";
 }
 
 /**
@@ -158,9 +164,7 @@ export function packagesSharingInvite(packages, env, id) {
 export function createMemoryRepository(packages) {
   let current = sanitizePackages(packages);
   return {
-    load() {
-      return current.map((pkg) => ({ ...pkg }));
-    },
+    load() { return current.map((pkg) => ({ ...pkg })); },
     async save(next) {
       current = sanitizePackages(next);
       return { ok: true };
@@ -179,50 +183,33 @@ export function createFileRepository({ env, filePath, bundled }) {
   function readSource() {
     const override = env.PACKAGES_JSON;
     if (typeof override === "string" && override.trim()) {
-      try {
-        return { source: JSON.parse(override), fromEnv: true };
-      } catch {
-        throw new PackageConfigError("PACKAGES_JSON is not valid JSON");
-      }
+      try { return { source: JSON.parse(override), fromEnv: true }; }
+      catch { throw new PackageConfigError("PACKAGES_JSON is not valid JSON"); }
     }
-
     if (existsSync(filePath)) {
-      try {
-        return { source: JSON.parse(readFileSync(filePath, "utf8")), fromEnv: false };
-      } catch (error) {
-        if (error instanceof SyntaxError) {
-          throw new PackageConfigError("config/packages.json is not valid JSON");
-        }
+      try { return { source: JSON.parse(readFileSync(filePath, "utf8")), fromEnv: false }; }
+      catch (error) {
+        if (error instanceof SyntaxError) throw new PackageConfigError("config/packages.json is not valid JSON");
         throw error;
       }
     }
-
     return { source: bundled, fromEnv: false };
   }
 
   return {
-    load() {
-      return sanitizePackages(extractPackageArray(readSource().source));
-    },
+    load() { return sanitizePackages(extractPackageArray(readSource().source)); },
     async save(packages) {
       const state = readSource();
       if (state.fromEnv) {
-        return {
-          ok: false,
-          message: "Packages are currently loaded from PACKAGES_JSON. Update that environment variable to change them.",
-        };
+        return { ok: false, message: "Packages are loaded from PACKAGES_JSON. Update that env var." };
       }
-
       const clean = sanitizePackages(packages);
       try {
         writeFileSync(filePath, `${JSON.stringify({ packages: clean }, null, 2)}\n`, "utf8");
       } catch (error) {
         const code = /** @type {NodeJS.ErrnoException} */ (error).code;
-        if (code === "EROFS" || code === "EPERM" || code === "EACCES" || code === "ENOENT") {
-          return {
-            ok: false,
-            message: "This host cannot store package edits on disk. Edit config/packages.json and redeploy, or set PACKAGES_JSON.",
-          };
+        if (["EROFS","EPERM","EACCES","ENOENT"].includes(code ?? "")) {
+          return { ok: false, message: "Cannot write on this host. Edit config/packages.json and redeploy." };
         }
         return { ok: false, message: "The package list could not be saved." };
       }
@@ -242,3 +229,13 @@ export function createDefaultRepository(env = process.env) {
     bundled: bundledCatalog,
   });
 }
+
+// Keep old export name for backward compat
+export { channelStatus as inviteStatus };
+
+/**
+ * @param {PackageRecord[]} _packages
+ * @param {NodeJS.ProcessEnv} _env
+ * @param {string} _id
+ */
+export function packagesSharingInvite(_packages, _env, _id) { return []; }

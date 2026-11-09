@@ -5,12 +5,12 @@ import {
   sanitizePackages,
   resolvePackage,
   isPayable,
-  inviteStatus,
+  channelStatus,
   packagesSharingInvite,
   createMemoryRepository,
   PackageConfigError,
 } from "../src/config/packages.js";
-import { defaultInviteEnv, isValidPackageId } from "../src/utils/validation.js";
+import { defaultInviteEnv, defaultChannelEnv, isValidPackageId } from "../src/utils/validation.js";
 
 // ---------------------------------------------------------------------------
 // isValidPackageId
@@ -25,11 +25,16 @@ describe("isValidPackageId", () => {
 });
 
 // ---------------------------------------------------------------------------
-// defaultInviteEnv
+// defaultInviteEnv / defaultChannelEnv
 // ---------------------------------------------------------------------------
 describe("defaultInviteEnv", () => {
   it("converts id to env key", () => assert.equal(defaultInviteEnv("basic"), "PACKAGE_BASIC_INVITE_LINK"));
   it("replaces hyphens with underscores", () => assert.equal(defaultInviteEnv("vip-gold"), "PACKAGE_VIP_GOLD_INVITE_LINK"));
+});
+
+describe("defaultChannelEnv", () => {
+  it("converts id to channel env key", () => assert.equal(defaultChannelEnv("btn1"), "PACKAGE_BTN1_CHANNEL_ID"));
+  it("replaces hyphens", () => assert.equal(defaultChannelEnv("my-pkg"), "PACKAGE_MY_PKG_CHANNEL_ID"));
 });
 
 // ---------------------------------------------------------------------------
@@ -37,9 +42,10 @@ describe("defaultInviteEnv", () => {
 // ---------------------------------------------------------------------------
 describe("sanitizePackages", () => {
   it("accepts a valid array", () => {
-    const result = sanitizePackages([{ id: "basic", name: "Basic", active: true }]);
+    const result = sanitizePackages([{ id: "basic", name: "Basic", active: true, priceStars: 2000 }]);
     assert.equal(result.length, 1);
     assert.equal(result[0].id, "basic");
+    assert.equal(result[0].priceStars, 2000);
   });
 
   it("throws PackageConfigError on non-array input", () => {
@@ -47,16 +53,14 @@ describe("sanitizePackages", () => {
   });
 
   it("skips entries without valid ids", () => {
-    // "BAD" gets lowercased to "bad" which is valid, so 2 packages survive.
-    // Only truly invalid ids (empty, starts with -, contains spaces) are dropped.
     const result = sanitizePackages([
       { id: "ok", name: "Ok" },
-      { id: "BAD", name: "Bad" },       // lowercased to "bad" — kept
-      { id: "", name: "Empty" },         // empty — dropped
-      { id: "-nope", name: "Nope" },    // starts with hyphen — dropped
-      { id: "has space", name: "Sp" },  // contains space — dropped
+      { id: "BAD", name: "Bad" },
+      { id: "", name: "Empty" },
+      { id: "-nope", name: "Nope" },
+      { id: "has space", name: "Sp" },
     ]);
-    assert.equal(result.length, 2); // "ok" and "bad"
+    assert.equal(result.length, 2);
     assert.equal(result[1].id, "bad");
   });
 
@@ -74,25 +78,24 @@ describe("sanitizePackages", () => {
     assert.equal(result.length, 0);
   });
 
-  it("assigns a default inviteLinkEnv when missing", () => {
-    const [pkg] = sanitizePackages([{ id: "premium", name: "Premium" }]);
-    assert.equal(pkg.inviteLinkEnv, "PACKAGE_PREMIUM_INVITE_LINK");
+  it("assigns default channelEnvs when missing", () => {
+    const [pkg] = sanitizePackages([{ id: "btn1", name: "Btn1" }]);
+    assert.deepEqual(pkg.channelEnvs, ["PACKAGE_BTN1_CHANNEL_ID"]);
   });
 
-  it("respects a custom inviteLinkEnv when valid", () => {
-    const [pkg] = sanitizePackages([{ id: "pro", name: "Pro", inviteLinkEnv: "MY_CUSTOM_ENV" }]);
-    assert.equal(pkg.inviteLinkEnv, "MY_CUSTOM_ENV");
-  });
-
-  it("falls back to default inviteLinkEnv when custom value is not a valid env key", () => {
-    const [pkg] = sanitizePackages([{ id: "pro", name: "Pro", inviteLinkEnv: "bad key!" }]);
-    assert.equal(pkg.inviteLinkEnv, "PACKAGE_PRO_INVITE_LINK");
+  it("respects custom channelEnvs when valid", () => {
+    const [pkg] = sanitizePackages([{ id: "pro", name: "Pro", channelEnvs: ["MY_CHANNEL_ENV"] }]);
+    assert.deepEqual(pkg.channelEnvs, ["MY_CHANNEL_ENV"]);
   });
 
   it("caps at 30 packages", () => {
     const items = Array.from({ length: 35 }, (_, i) => ({ id: `pkg${i}`, name: `Pkg ${i}` }));
-    const result = sanitizePackages(items);
-    assert.equal(result.length, 30);
+    assert.equal(sanitizePackages(items).length, 30);
+  });
+
+  it("priceStars defaults to 0 for missing/invalid value", () => {
+    const [pkg] = sanitizePackages([{ id: "free", name: "Free" }]);
+    assert.equal(pkg.priceStars, 0);
   });
 });
 
@@ -102,30 +105,30 @@ describe("sanitizePackages", () => {
 describe("resolvePackage", () => {
   /** @type {import("../src/config/packages.js").PackageRecord} */
   const record = {
-    id: "basic",
-    name: "Basic",
+    id: "btn1",
+    name: "Button 1",
     description: "desc",
-    priceLabel: "100 Stars",
+    priceLabel: "2,000",
+    priceStars: 2000,
     active: true,
     imageUrl: "",
-    inviteLinkEnv: "PACKAGE_BASIC_INVITE_LINK",
+    inviteLinkEnv: "PACKAGE_BTN1_INVITE_LINK",
+    channelEnvs: ["PACKAGE_BTN1_CHANNEL_ID"],
   };
 
-  it("resolves a valid invite link", () => {
-    const env = { PACKAGE_BASIC_INVITE_LINK: "https://t.me/+abc123" };
-    const pkg = resolvePackage(record, env);
-    assert.equal(pkg.inviteLink, "https://t.me/+abc123");
+  it("resolves a valid channel id", () => {
+    const pkg = resolvePackage(record, { PACKAGE_BTN1_CHANNEL_ID: "-1001234567890" });
+    assert.deepEqual(pkg.channelIds, ["-1001234567890"]);
   });
 
-  it("resolves to null when the env var is missing", () => {
+  it("resolves to empty array when env var is missing", () => {
     const pkg = resolvePackage(record, {});
-    assert.equal(pkg.inviteLink, null);
+    assert.deepEqual(pkg.channelIds, []);
   });
 
-  it("resolves to null when the link is not a valid t.me URL", () => {
-    const env = { PACKAGE_BASIC_INVITE_LINK: "https://example.com/bad" };
-    const pkg = resolvePackage(record, env);
-    assert.equal(pkg.inviteLink, null);
+  it("resolves to empty array when value is not numeric", () => {
+    const pkg = resolvePackage(record, { PACKAGE_BTN1_CHANNEL_ID: "not-a-number" });
+    assert.deepEqual(pkg.channelIds, []);
   });
 });
 
@@ -133,39 +136,47 @@ describe("resolvePackage", () => {
 // isPayable
 // ---------------------------------------------------------------------------
 describe("isPayable", () => {
-  it("returns true for an active package with a valid invite link", () => {
-    const pkg = { id: "basic", name: "Basic", description: "", priceLabel: "", active: true, imageUrl: "", inviteLinkEnv: "X", inviteLink: "https://t.me/+abc" };
+  it("returns true for active package with priceStars and channelIds", () => {
+    const pkg = { id: "btn1", name: "B1", description: "", priceLabel: "", priceStars: 2000, active: true, imageUrl: "", inviteLinkEnv: "X", channelEnvs: [], channelIds: ["-100123"] };
     assert.ok(isPayable(pkg));
   });
 
   it("returns false when inactive", () => {
-    const pkg = { id: "basic", name: "Basic", description: "", priceLabel: "", active: false, imageUrl: "", inviteLinkEnv: "X", inviteLink: "https://t.me/+abc" };
+    const pkg = { id: "btn1", name: "B1", description: "", priceLabel: "", priceStars: 2000, active: false, imageUrl: "", inviteLinkEnv: "X", channelEnvs: [], channelIds: ["-100123"] };
     assert.ok(!isPayable(pkg));
   });
 
-  it("returns false when invite link is null", () => {
-    const pkg = { id: "basic", name: "Basic", description: "", priceLabel: "", active: true, imageUrl: "", inviteLinkEnv: "X", inviteLink: null };
+  it("returns false when priceStars is 0", () => {
+    const pkg = { id: "btn1", name: "B1", description: "", priceLabel: "", priceStars: 0, active: true, imageUrl: "", inviteLinkEnv: "X", channelEnvs: [], channelIds: ["-100123"] };
+    assert.ok(!isPayable(pkg));
+  });
+
+  it("returns false when channelIds is empty", () => {
+    const pkg = { id: "btn1", name: "B1", description: "", priceLabel: "", priceStars: 2000, active: true, imageUrl: "", inviteLinkEnv: "X", channelEnvs: [], channelIds: [] };
     assert.ok(!isPayable(pkg));
   });
 });
 
 // ---------------------------------------------------------------------------
-// inviteStatus
+// channelStatus
 // ---------------------------------------------------------------------------
-describe("inviteStatus", () => {
+describe("channelStatus", () => {
   /** @type {import("../src/config/packages.js").PackageRecord} */
-  const record = { id: "vip", name: "VIP", description: "", priceLabel: "", active: true, imageUrl: "", inviteLinkEnv: "PACKAGE_VIP_INVITE_LINK" };
+  const record = {
+    id: "btn1", name: "B1", description: "", priceLabel: "", priceStars: 2000,
+    active: true, imageUrl: "", inviteLinkEnv: "X", channelEnvs: ["PACKAGE_BTN1_CHANNEL_ID"],
+  };
 
-  it("returns configured for a valid link", () => {
-    assert.equal(inviteStatus(record, { PACKAGE_VIP_INVITE_LINK: "https://t.me/+xyz" }), "configured");
+  it("returns configured for a valid numeric channel id", () => {
+    assert.equal(channelStatus(record, { PACKAGE_BTN1_CHANNEL_ID: "-1001234567890" }), "configured");
   });
 
   it("returns missing when env var is absent", () => {
-    assert.equal(inviteStatus(record, {}), "missing");
+    assert.equal(channelStatus(record, {}), "missing");
   });
 
-  it("returns invalid when the link does not pass validation", () => {
-    assert.equal(inviteStatus(record, { PACKAGE_VIP_INVITE_LINK: "not-a-link" }), "invalid");
+  it("returns invalid when value is not numeric", () => {
+    assert.equal(channelStatus(record, { PACKAGE_BTN1_CHANNEL_ID: "not-numeric" }), "invalid");
   });
 });
 
@@ -173,26 +184,16 @@ describe("inviteStatus", () => {
 // packagesSharingInvite
 // ---------------------------------------------------------------------------
 describe("packagesSharingInvite", () => {
-  const records = [
-    { id: "a", name: "A", description: "", priceLabel: "", active: true, imageUrl: "", inviteLinkEnv: "LINK_A" },
-    { id: "b", name: "B", description: "", priceLabel: "", active: true, imageUrl: "", inviteLinkEnv: "LINK_B" },
-    { id: "c", name: "C", description: "", priceLabel: "", active: true, imageUrl: "", inviteLinkEnv: "LINK_C" },
-  ];
-  const env = { LINK_A: "https://t.me/+shared", LINK_B: "https://t.me/+shared", LINK_C: "https://t.me/+unique" };
-
-  it("finds packages sharing the same invite link", () => {
-    const result = packagesSharingInvite(records, env, "a");
-    assert.deepEqual(result, ["b"]);
+  it("returns empty (invite sharing check removed in new payment flow)", () => {
+    const records = [
+      { id: "a", name: "A", description: "", priceLabel: "", priceStars: 100, active: true, imageUrl: "", inviteLinkEnv: "LINK_A", channelEnvs: ["CH_A"] },
+      { id: "b", name: "B", description: "", priceLabel: "", priceStars: 100, active: true, imageUrl: "", inviteLinkEnv: "LINK_B", channelEnvs: ["CH_B"] },
+    ];
+    assert.deepEqual(packagesSharingInvite(records, {}, "a"), []);
   });
 
-  it("returns empty when the invite is unique", () => {
-    const result = packagesSharingInvite(records, env, "c");
-    assert.deepEqual(result, []);
-  });
-
-  it("returns empty for an unknown id", () => {
-    const result = packagesSharingInvite(records, env, "unknown");
-    assert.deepEqual(result, []);
+  it("returns empty for unknown id", () => {
+    assert.deepEqual(packagesSharingInvite([], {}, "unknown"), []);
   });
 });
 
@@ -201,25 +202,23 @@ describe("packagesSharingInvite", () => {
 // ---------------------------------------------------------------------------
 describe("createMemoryRepository", () => {
   it("loads packages", () => {
-    const repo = createMemoryRepository([{ id: "basic", name: "Basic" }]);
+    const repo = createMemoryRepository([{ id: "btn1", name: "Button 1", priceStars: 2000 }]);
     const loaded = repo.load();
     assert.equal(loaded.length, 1);
-    assert.equal(loaded[0].id, "basic");
+    assert.equal(loaded[0].id, "btn1");
   });
 
   it("saves and reloads packages", async () => {
-    const repo = createMemoryRepository([{ id: "basic", name: "Basic" }]);
-    const result = await repo.save([{ id: "premium", name: "Premium", active: true }]);
+    const repo = createMemoryRepository([{ id: "btn1", name: "Button 1" }]);
+    const result = await repo.save([{ id: "btn2", name: "Button 2", active: true, priceStars: 5000 }]);
     assert.ok(result.ok);
-    const loaded = repo.load();
-    assert.equal(loaded.length, 1);
-    assert.equal(loaded[0].id, "premium");
+    assert.equal(repo.load()[0].id, "btn2");
   });
 
   it("returns copies, not references", () => {
-    const repo = createMemoryRepository([{ id: "basic", name: "Basic", active: true }]);
+    const repo = createMemoryRepository([{ id: "btn1", name: "Button 1", active: true }]);
     const loaded = repo.load();
     loaded[0].name = "Mutated";
-    assert.equal(repo.load()[0].name, "Basic");
+    assert.equal(repo.load()[0].name, "Button 1");
   });
 });

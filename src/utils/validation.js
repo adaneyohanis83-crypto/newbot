@@ -4,26 +4,21 @@ const PACKAGE_ID = /^[a-z0-9][a-z0-9_-]{0,31}$/;
 const ENV_KEY = /^[A-Z][A-Z0-9_]{0,80}$/;
 const USERNAME = /^[A-Za-z0-9_]{5,32}$/;
 
-/**
- * @param {string} id
- */
-export function isValidPackageId(id) {
-  return PACKAGE_ID.test(id);
-}
+/** @param {string} id */
+export function isValidPackageId(id) { return PACKAGE_ID.test(id); }
 
-/**
- * @param {string} id
- */
+/** @param {string} id */
 export function defaultInviteEnv(id) {
   return `PACKAGE_${id.toUpperCase().replaceAll("-", "_")}_INVITE_LINK`;
 }
 
-/**
- * @param {string} value
- */
-export function isEnvKey(value) {
-  return ENV_KEY.test(value);
+/** @param {string} id */
+export function defaultChannelEnv(id) {
+  return `PACKAGE_${id.toUpperCase().replaceAll("-", "_")}_CHANNEL_ID`;
 }
+
+/** @param {string} value */
+export function isEnvKey(value) { return ENV_KEY.test(value); }
 
 /**
  * @param {string | undefined} value
@@ -41,16 +36,12 @@ export function normalizeUsername(value) {
  */
 export function parseAdminIds(value) {
   if (!value) return new Set();
-  const ids = value
-    .split(",")
-    .map((part) => part.trim())
-    .filter((part) => /^[0-9]{1,20}$/.test(part));
-  return new Set(ids);
+  return new Set(
+    value.split(",").map((p) => p.trim()).filter((p) => /^[0-9]{1,20}$/.test(p))
+  );
 }
 
-/**
- * @param {string} value
- */
+/** @param {string} value */
 export function containsLink(value) {
   return /https?:\/\//i.test(value) || /(^|[\s(])t\.me\b/i.test(value) || /telegram\.me/i.test(value);
 }
@@ -64,11 +55,7 @@ export function isPaidInviteLink(value) {
   const trimmed = value.trim();
   if (!trimmed || trimmed.length > 300) return false;
   let url;
-  try {
-    url = new URL(trimmed);
-  } catch {
-    return false;
-  }
+  try { url = new URL(trimmed); } catch { return false; }
   if (url.protocol !== "https:") return false;
   const host = url.hostname.toLowerCase();
   if (host !== "t.me" && host !== "telegram.me") return false;
@@ -85,14 +72,10 @@ export function sanitizeImageUrl(value) {
   const trimmed = value.trim();
   if (!trimmed || trimmed.length > 300) return "";
   let url;
-  try {
-    url = new URL(trimmed);
-  } catch {
-    return "";
-  }
+  try { url = new URL(trimmed); } catch { return ""; }
   if (url.protocol !== "https:") return "";
   const host = url.hostname.toLowerCase();
-  if (host === "t.me" || host === "telegram.me" || host === "telegram.dog") return "";
+  if (["t.me","telegram.me","telegram.dog"].includes(host)) return "";
   return trimmed;
 }
 
@@ -105,8 +88,6 @@ export function deepLink(username, payload) {
 }
 
 /**
- * Returns the start payload, or null when the text is not a /start command.
- * An empty string means /start was sent without a package id.
  * @param {string | undefined} text
  * @returns {string | null}
  */
