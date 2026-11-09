@@ -1,31 +1,139 @@
 {
   "packages": [
     {
-      "id": "basic",
-      "name": "Basic Package",
-      "description": "Basic channel access.",
-      "priceLabel": "",
+      "id": "btn1",
+      "name": "M/lk Age",
+      "description": "Get Access to Button 1 categories.",
+      "priceLabel": "2,000",
       "active": true,
       "imageUrl": "",
-      "inviteLinkEnv": "PACKAGE_BASIC_INVITE_LINK"
+      "inviteLinkEnv": "PACKAGE_BTN1_INVITE_LINK"
     },
     {
-      "id": "premium",
-      "name": "Premium Package",
-      "description": "Premium channel access.",
-      "priceLabel": "",
+      "id": "btn2",
+      "name": "Ultra D8rknet Package",
+      "description": "Get Access to Button 2 categories.",
+      "priceLabel": "5,000",
       "active": true,
       "imageUrl": "",
-      "inviteLinkEnv": "PACKAGE_PREMIUM_INVITE_LINK"
+      "inviteLinkEnv": "PACKAGE_BTN2_INVITE_LINK"
     },
     {
-      "id": "vip",
-      "name": "VIP Package",
-      "description": "VIP channel access.",
-      "priceLabel": "",
+      "id": "btn3",
+      "name": "R@pe",
+      "description": "Get Access to Button 3 categories.",
+      "priceLabel": "2,500",
       "active": true,
       "imageUrl": "",
-      "inviteLinkEnv": "PACKAGE_VIP_INVITE_LINK"
+      "inviteLinkEnv": "PACKAGE_BTN3_INVITE_LINK"
+    },
+    {
+      "id": "btn4",
+      "name": "Three Any Catagories",
+      "description": "Get Access to Button 4 categories.",
+      "priceLabel": "3,500",
+      "active": true,
+      "imageUrl": "",
+      "inviteLinkEnv": "PACKAGE_BTN4_INVITE_LINK"
+    },
+    {
+      "id": "btn5",
+      "name": "Te8n@gers",
+      "description": "Get Access to Button 5 categories.",
+      "priceLabel": "2,500",
+      "active": true,
+      "imageUrl": "",
+      "inviteLinkEnv": "PACKAGE_BTN5_INVITE_LINK"
+    },
+    {
+      "id": "btn6",
+      "name": "DRUNK-PARTIES",
+      "description": "Get Access to Button 6 categories.",
+      "priceLabel": "2,000",
+      "active": true,
+      "imageUrl": "",
+      "inviteLinkEnv": "PACKAGE_BTN6_INVITE_LINK"
+    },
+    {
+      "id": "btn7",
+      "name": "Mega VIP Archives",
+      "description": "Get Access to Button 7 categories.",
+      "priceLabel": "10,000",
+      "active": true,
+      "imageUrl": "",
+      "inviteLinkEnv": "PACKAGE_BTN7_INVITE_LINK"
+    },
+    {
+      "id": "btn8",
+      "name": "Hidd8n Cameras",
+      "description": "Get Access to Button 8 categories.",
+      "priceLabel": "1,500",
+      "active": true,
+      "imageUrl": "",
+      "inviteLinkEnv": "PACKAGE_BTN8_INVITE_LINK"
+    },
+    {
+      "id": "btn9",
+      "name": "Pack All Inclided",
+      "description": "Get Access to Button 9 categories.",
+      "priceLabel": "7,000",
+      "active": true,
+      "imageUrl": "",
+      "inviteLinkEnv": "PACKAGE_BTN9_INVITE_LINK"
+    },
+    {
+      "id": "btn10",
+      "name": "Young G@y",
+      "description": "Get Access to Button 10 categories.",
+      "priceLabel": "1,500",
+      "active": true,
+      "imageUrl": "",
+      "inviteLinkEnv": "PACKAGE_BTN10_INVITE_LINK"
+    },
+    {
+      "id": "btn11",
+      "name": "Z@0 An8mals",
+      "description": "Get Access to Button 11 categories.",
+      "priceLabel": "1,500",
+      "active": true,
+      "imageUrl": "",
+      "inviteLinkEnv": "PACKAGE_BTN11_INVITE_LINK"
+    },
+    {
+      "id": "btn12",
+      "name": "Pedo/Incest",
+      "description": "Get Access to Button 12 categories.",
+      "priceLabel": "2,500",
+      "active": true,
+      "imageUrl": "",
+      "inviteLinkEnv": "PACKAGE_BTN12_INVITE_LINK"
+    },
+    {
+      "id": "btn13",
+      "name": "M8lf",
+      "description": "Get Access to Button 13 categories.",
+      "priceLabel": "1500",
+      "active": true,
+      "imageUrl": "",
+      "inviteLinkEnv": "PACKAGE_BTN13_INVITE_LINK"
+    },
+    {
+      "id": "btn14",
+      "name": "SLEEPER-PORN",
+      "description": "Get Access to Button 14 categories.",
+      "priceLabel": "2,000",
+      "active": true,
+      "imageUrl": "",
+      "inviteLinkEnv": "PACKAGE_BTN14_INVITE_LINK"
+    },
+    {
+      "id": "btn15",
+      "name": "FAMILYPORN",
+      "description": "Get Access to Button 15 categories.",
+      "priceLabel": "2,000",
+      "active": true,
+      "imageUrl": "",
+      "inviteLinkEnv": "PACKAGE_BTN15_INVITE_LINK"
     }
   ]
 }

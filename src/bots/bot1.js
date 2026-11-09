@@ -43,23 +43,11 @@ export async function handleBot1Update(update, ctx) {
     return;
   }
 
-  const startPayload = readPayload(text);
-  if (startPayload === "menu") {
+  // Any /start (with or without payload) shows the menu directly
+  if (/^\/start(?:@\w+)?/i.test(text)) {
     await showMenu(message.chat.id, undefined, ctx);
     return;
   }
-
-  await showWelcome(message.chat.id, undefined, ctx);
-}
-
-/**
- * @param {string} text
- * @returns {string | null}
- */
-function readPayload(text) {
-  const match = text.match(/^\/start(?:@\w+)?(?:\s+(\S+))?$/i);
-  if (!match) return null;
-  return (match[1] ?? "").toLowerCase();
 }
 
 /**
@@ -77,34 +65,20 @@ async function handleCallback(query, ctx) {
   const data = query.data ?? "";
   const target = { chatId: chat.id, messageId: query.message?.message_id };
 
-  if (data === "home") {
-    await showWelcome(target.chatId, target.messageId, ctx);
-    return;
-  }
   if (data === "menu") {
     await showMenu(target.chatId, target.messageId, ctx);
     return;
   }
+
   if (data.startsWith("pkg:")) {
     const packageId = data.slice(4).toLowerCase();
     if (!isValidPackageId(packageId)) {
-      await presentMessage(ctx.api, target, "That package is not available.", homeKeyboard());
+      await presentMessage(ctx.api, target, "⚠️ That category is not available.", menuBackKeyboard());
       return;
     }
     await showDetails(target.chatId, target.messageId, packageId, ctx);
     return;
   }
-
-  await showWelcome(target.chatId, target.messageId, ctx);
-}
-
-/**
- * @param {number} chatId
- * @param {number | undefined} messageId
- * @param {BotContext} ctx
- */
-async function showWelcome(chatId, messageId, ctx) {
-  await presentMessage(ctx.api, { chatId, messageId }, welcomeText(), welcomeKeyboard());
 }
 
 /**
@@ -128,24 +102,26 @@ async function showMenu(chatId, messageId, ctx) {
 async function showDetails(chatId, messageId, packageId, ctx) {
   const packages = await loadPackages(chatId, messageId, ctx);
   if (!packages) return;
+
   const pkg = packages.find((item) => item.id === packageId);
   if (!pkg || !pkg.active) {
     await presentMessage(
       ctx.api,
       { chatId, messageId },
-      "That package is not available. Choose another package from the menu.",
-      menuKeyboard(packages.filter((item) => item.active)),
+      "⚠️ That category is not available.",
+      menuBackKeyboard(),
     );
     return;
   }
 
   const payable = isPayable(pkg);
   const usernameReady = Boolean(ctx.bot2Username);
+
   await presentMessage(
     ctx.api,
     { chatId, messageId },
     selectionText(pkg, { payable, usernameReady }),
-    detailsKeyboard(pkg.id, payable && usernameReady ? ctx.bot2Username : null),
+    detailsKeyboard(pkg.id, payable && usernameReady ? ctx.bot2Username : null, pkg.priceLabel),
     pkg.imageUrl || undefined,
   );
 }
@@ -161,19 +137,11 @@ async function loadPackages(chatId, messageId, ctx) {
     return ctx.repository.load().map((record) => resolvePackage(record, ctx.env));
   } catch (error) {
     if (error instanceof PackageConfigError) {
-      await presentMessage(ctx.api, { chatId, messageId }, catalogUnavailableText(), homeKeyboard());
+      await presentMessage(ctx.api, { chatId, messageId }, catalogUnavailableText(), menuBackKeyboard());
       return null;
     }
     throw error;
   }
-}
-
-function welcomeKeyboard() {
-  return { inline_keyboard: [[{ text: "▶️ Start", callback_data: "menu" }]] };
-}
-
-function homeKeyboard() {
-  return { inline_keyboard: [[{ text: "🏠 Home", callback_data: "home" }]] };
 }
 
 /**
@@ -181,30 +149,41 @@ function homeKeyboard() {
  * @returns {InlineKeyboard}
  */
 function menuKeyboard(packages) {
-  const rows = packages.map((pkg) => [{ text: buttonLabel(pkg.name), callback_data: `pkg:${pkg.id}` }]);
-  rows.push([{ text: "🏠 Home", callback_data: "home" }]);
+  // Each package gets its own full-width row
+  const rows = packages.map((pkg) => [{
+    text: pkg.name,
+    callback_data: `pkg:${pkg.id}`,
+  }]);
   return { inline_keyboard: rows };
+}
+
+/**
+ * @returns {InlineKeyboard}
+ */
+function menuBackKeyboard() {
+  return {
+    inline_keyboard: [[{ text: "🔙 Back to menu", callback_data: "menu" }]],
+  };
 }
 
 /**
  * @param {string} packageId
  * @param {string | null} bot2Username
+ * @param {string} priceLabel
  * @returns {InlineKeyboard}
  */
-function detailsKeyboard(packageId, bot2Username) {
+function detailsKeyboard(packageId, bot2Username, priceLabel) {
   /** @type {import("../types.js").InlineButton[][]} */
   const rows = [];
-  if (bot2Username) {
-    rows.push([{ text: "💳 Continue to payment", url: deepLink(bot2Username, packageId) }]);
-  }
-  rows.push([{ text: "⬅️ Back", callback_data: "menu" }]);
-  rows.push([{ text: "🏠 Home", callback_data: "home" }]);
-  return { inline_keyboard: rows };
-}
 
-/**
- * @param {string} name
- */
-function buttonLabel(name) {
-  return name.length > 60 ? `${name.slice(0, 57)}...` : name;
+  if (bot2Username) {
+    rows.push([{
+      text: `⭐ Pay with Stars`,
+      url: deepLink(bot2Username, packageId),
+    }]);
+  }
+
+  rows.push([{ text: "🔙 Back to menu", callback_data: "menu" }]);
+
+  return { inline_keyboard: rows };
 }

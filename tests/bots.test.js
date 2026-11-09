@@ -117,12 +117,12 @@ describe("Bot 1 — /start", () => {
     assert.ok(texts.some((t) => t.includes("Welcome")), "Welcome message expected");
   });
 
-  it("shows the menu when /start menu is sent", async () => {
+  it("shows the menu when /start is sent (with or without payload)", async () => {
     const { api, calls } = mockApi();
     const ctx = makeCtx(api, "bot1", "bot2");
     await handleBot1Update(startMsg("/start menu"), ctx);
     const texts = calls.flatMap((c) => c.args).map(String);
-    assert.ok(texts.some((t) => t.includes("package") || t.includes("Package")), "Menu text expected");
+    assert.ok(texts.some((t) => t.includes("category") || t.includes("Category") || t.includes("Welcome")), "Menu text expected");
   });
 });
 
@@ -195,12 +195,12 @@ describe("Bot 1 — group chat", () => {
 // Bot 1 — home button
 // ---------------------------------------------------------------------------
 describe("Bot 1 — home callback", () => {
-  it("returns to the welcome screen on home callback", async () => {
+  it("returns to the menu on menu callback", async () => {
     const { api, calls } = mockApi();
     const ctx = makeCtx(api, "bot1", "bot2");
-    await handleBot1Update(callbackQuery("home"), ctx);
+    await handleBot1Update(callbackQuery("menu"), ctx);
     const texts = calls.flatMap((c) => c.args).map(String);
-    assert.ok(texts.some((t) => t.includes("Welcome")), "Welcome screen expected");
+    assert.ok(texts.some((t) => t.includes("Welcome") || t.includes("category") || t.includes("Category")), "Menu screen expected");
   });
 });
 
@@ -213,7 +213,7 @@ describe("Bot 2 — /start without package", () => {
     const ctx = makeCtx(api, "bot1", "bot2");
     await handleBot2Update(startMsg("/start"), ctx);
     const texts = calls.flatMap((c) => c.args).map(String);
-    assert.ok(texts.some((t) => t.includes("main bot") || t.includes("package")), "Guidance message expected");
+    assert.ok(texts.some((t) => t.includes("select") || t.includes("category") || t.includes("main bot")), "Guidance message expected");
   });
 });
 

@@ -29,16 +29,13 @@ export async function handleBot2Update(update, ctx) {
   }
 
   const text = message.text.trim();
-  if (/^\/admin(?:@\w+)?(?:\s|$)/i.test(text)) {
-    await ctx.api.sendMessage(message.chat.id, "Package changes are handled in the main bot.", returnKeyboard(ctx));
-    return;
-  }
 
   const payload = readStartCommand(text);
   if (payload === null) {
+    // Any non-/start message — guide back to bot1
     await ctx.api.sendMessage(
       message.chat.id,
-      "Open this bot from the package you selected in the main bot.",
+      "Please select a category from the main bot first.",
       returnKeyboard(ctx),
     );
     return;
@@ -54,6 +51,7 @@ export async function handleBot2Update(update, ctx) {
  */
 async function showPayment(chatId, payload, ctx) {
   const back = returnKeyboard(ctx);
+
   if (!payload || !isValidPackageId(payload)) {
     await ctx.api.sendMessage(chatId, unavailableText(), back);
     return;
@@ -80,23 +78,22 @@ async function showPayment(chatId, payload, ctx) {
     ctx.api,
     { chatId },
     paymentText(pkg),
-    paymentKeyboard(pkg.inviteLink, ctx.bot1Username),
+    paymentKeyboard(pkg.inviteLink, pkg.priceLabel),
     pkg.imageUrl || undefined,
   );
 }
 
 /**
  * @param {string} inviteLink
- * @param {string | null} bot1Username
+ * @param {string} priceLabel
  * @returns {InlineKeyboard}
  */
-function paymentKeyboard(inviteLink, bot1Username) {
-  /** @type {import("../types.js").InlineButton[][]} */
-  const rows = [[{ text: "⭐ Pay with Telegram Stars", url: inviteLink }]];
-  if (bot1Username) {
-    rows.push([{ text: "⬅️ Return to packages", url: deepLink(bot1Username, "menu") }]);
-  }
-  return { inline_keyboard: rows };
+function paymentKeyboard(inviteLink, priceLabel) {
+  return {
+    inline_keyboard: [
+      [{ text: `Pay ⭐ ${priceLabel}`, url: inviteLink }],
+    ],
+  };
 }
 
 /**
@@ -106,6 +103,9 @@ function paymentKeyboard(inviteLink, bot1Username) {
 function returnKeyboard(ctx) {
   if (!ctx.bot1Username) return undefined;
   return {
-    inline_keyboard: [[{ text: "⬅️ Return to packages", url: deepLink(ctx.bot1Username, "menu") }]],
+    inline_keyboard: [[{
+      text: "🔙 Back to menu",
+      url: deepLink(ctx.bot1Username, "menu"),
+    }]],
   };
 }
