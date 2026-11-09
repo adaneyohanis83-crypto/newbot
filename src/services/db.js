@@ -12,7 +12,17 @@
  *   user_memberships:{userId}     → string[]   (list of channelIds)
  */
 
-import { createClient } from "@vercel/kv";
+import { Redis } from "@upstash/redis";
+
+/**
+ * @returns {Redis}
+ */
+function getKv() {
+  return new Redis({
+    url: process.env.KV_REST_API_URL ?? "",
+    token: process.env.KV_REST_API_TOKEN ?? "",
+  });
+}
 
 /**
  * @typedef {Object} UserRecord
@@ -56,16 +66,6 @@ import { createClient } from "@vercel/kv";
  * @property {string} grantedAt
  * @property {string|null} expiresAt
  */
-
-/**
- * @returns {import("@vercel/kv").VercelKV}
- */
-function getKv() {
-  return createClient({
-    url: process.env.KV_REST_API_URL ?? "",
-    token: process.env.KV_REST_API_TOKEN ?? "",
-  });
-}
 
 // ---------------------------------------------------------------------------
 // Users
