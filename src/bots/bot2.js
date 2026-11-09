@@ -14,6 +14,7 @@ import {
   incrementStats,
 } from "../services/db.js";
 import { escapeHtml } from "../utils/html.js";
+import { checkRateLimit, cleanupRateLimits } from "../utils/rate-limit.js";
 
 /**
  * @typedef {import("../types.js").TelegramUpdate} TelegramUpdate
@@ -52,6 +53,16 @@ export async function handleBot2Update(update, ctx) {
     return;
   }
 
+  // Rate limit by user ID
+  const userId = String(message.from?.id ?? "");
+  if (!userId) return;
+
+  cleanupRateLimits();
+  if (!checkRateLimit(userId)) {
+    await ctx.api.sendMessage(message.chat.id, "⚠️ Too many requests. Please wait a minute and try again.");
+    return;
+  }
+
   const text = message.text.trim();
   const payload = readStartCommand(text);
 
@@ -64,7 +75,7 @@ export async function handleBot2Update(update, ctx) {
     return;
   }
 
-  await showInvoice(message.chat.id, String(message.from?.id ?? ""), message.from?.username ?? "", payload, ctx);
+  await showInvoice(message.chat.id, userId, message.from?.username ?? "", payload, ctx);
 }
 
 // ---------------------------------------------------------------------------

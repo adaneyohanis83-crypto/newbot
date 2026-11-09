@@ -41,6 +41,10 @@ export async function processWebhook(req, res, options) {
     return;
   }
 
+  // Only accept requests from Telegram IP ranges
+  // Telegram sends from 149.154.160.0/20 and 91.108.4.0/22
+  // Vercel doesn't expose raw IPs easily, so we rely on secret token validation below.
+
   const provided = headerValue(req.headers, "x-telegram-bot-api-secret-token");
   if (!secretsMatch(options.secret, provided)) {
     res.status(401).json({ ok: false });
