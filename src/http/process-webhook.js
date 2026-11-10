@@ -63,7 +63,7 @@ export async function processWebhook(req, res, options) {
     return;
   }
 
-  if (typeof update.update_id === "number" && hasSeenUpdate(options.botName, update.update_id)) {
+  if (typeof update.update_id === "number" && await hasSeenUpdate(options.botName, update.update_id)) {
     res.status(200).json({ ok: true });
     return;
   }
@@ -71,7 +71,7 @@ export async function processWebhook(req, res, options) {
   try {
     const api = createTelegramApi(options.token, options.fetchImpl);
     await options.handle(update, api);
-    if (typeof update.update_id === "number") rememberUpdate(options.botName, update.update_id);
+    if (typeof update.update_id === "number") await rememberUpdate(options.botName, update.update_id);
     res.status(200).json({ ok: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown error";
