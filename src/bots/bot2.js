@@ -121,7 +121,7 @@ async function showInvoice(chatId, userId, username, payload, ctx) {
   }
 
   // Check if user already has lifetime access to ALL channels in this package
-  if (userId) {
+  if (userId && pkg.channelIds.length > 0) {
     const alreadyHasAll = await Promise.all(
       pkg.channelIds.map((ch) => hasActiveMembership(userId, ch))
     );
