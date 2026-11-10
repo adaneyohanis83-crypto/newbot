@@ -330,15 +330,17 @@ async function deliverAccess(chatId, userId, pkg, orderId, chargeId, ctx) {
       delivered.push({ label: `Join Channel`, link: inviteLink });
     } catch (error) {
       const msg = error instanceof Error ? error.message : "unknown";
-      console.error(`Failed to create invite for channel ${channelId}: ${msg}`);
-      failed.push(channelId);
+      console.error(`createChatInviteLink failed — channelId: ${channelId}, error: ${msg}`);
+      failed.push(`${channelId} (${msg})`);
     }
   }
 
   if (delivered.length === 0) {
+    // Send the actual error to chat temporarily for debugging
+    const errorDetail = failed.join(", ");
     await ctx.api.sendMessage(
       chatId,
-      `✅ Payment of ${pkg.priceStars.toLocaleString()} ⭐ confirmed!\n\n⚠️ There was an issue delivering your channel access. Your payment is recorded.\n\nPlease contact support with payment ID:\n<code>${escapeHtml(chargeId)}</code>`,
+      `✅ Payment of ${pkg.priceStars.toLocaleString()} ⭐ confirmed!\n\n⚠️ Channel access delivery failed.\n\n<b>Debug info:</b> <code>${escapeHtml(errorDetail)}</code>\n\nPayment ID: <code>${escapeHtml(chargeId)}</code>`,
     );
     return;
   }
