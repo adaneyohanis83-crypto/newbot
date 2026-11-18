@@ -22,7 +22,6 @@ const appUrl = String(env.APP_URL).trim().replace(/\/+$/, "");
 
 try {
   await register("Bot 1", env.BOT1_TOKEN, env.BOT1_USERNAME, `${appUrl}/api/webhook/bot1`, env.BOT1_WEBHOOK_SECRET);
-  await register("Bot 2", env.BOT2_TOKEN, env.BOT2_USERNAME, `${appUrl}/api/webhook/bot2`, env.BOT2_WEBHOOK_SECRET);
 } catch (error) {
   const message = error instanceof Error ? error.message : "Webhook registration failed";
   console.error(message);

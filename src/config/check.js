@@ -11,7 +11,7 @@ const SECRET_PATTERN = /^[A-Za-z0-9_-]{1,256}$/;
 export function collectWebhookIssues(env) {
   /** @type {string[]} */
   const issues = [];
-  for (const key of ["BOT1_TOKEN", "BOT2_TOKEN", "BOT1_WEBHOOK_SECRET", "BOT2_WEBHOOK_SECRET", "ADMIN_TELEGRAM_ID"]) {
+  for (const key of ["BOT1_TOKEN", "BOT1_WEBHOOK_SECRET", "ADMIN_TELEGRAM_ID"]) {
     if (!env[key] || !String(env[key]).trim()) issues.push(`${key} is missing`);
   }
   const appUrl = env.APP_URL?.trim() ?? "";
@@ -20,19 +20,12 @@ export function collectWebhookIssues(env) {
   else if (appUrl.endsWith("/")) issues.push("APP_URL must not end with a slash");
 
   if (!normalizeUsername(env.BOT1_USERNAME)) issues.push("BOT1_USERNAME is missing or invalid");
-  if (!normalizeUsername(env.BOT2_USERNAME)) issues.push("BOT2_USERNAME is missing or invalid");
-  if (normalizeUsername(env.BOT1_USERNAME) && normalizeUsername(env.BOT1_USERNAME) === normalizeUsername(env.BOT2_USERNAME)) {
-    issues.push("BOT1_USERNAME and BOT2_USERNAME must be different");
-  }
 
-  for (const key of ["BOT1_WEBHOOK_SECRET", "BOT2_WEBHOOK_SECRET"]) {
+  for (const key of ["BOT1_WEBHOOK_SECRET"]) {
     const secret = env[key];
     if (secret && String(secret).trim() && !SECRET_PATTERN.test(String(secret).trim())) {
       issues.push(`${key} must use 1-256 letters, numbers, underscores, or hyphens`);
     }
-  }
-  if (env.BOT1_WEBHOOK_SECRET && env.BOT1_WEBHOOK_SECRET === env.BOT2_WEBHOOK_SECRET) {
-    issues.push("BOT1_WEBHOOK_SECRET and BOT2_WEBHOOK_SECRET must be different");
   }
   if (env.ADMIN_TELEGRAM_ID && !String(env.ADMIN_TELEGRAM_ID).split(",").every((part) => /^[0-9]{1,20}$/.test(part.trim()) || part.trim() === "")) {
     issues.push("ADMIN_TELEGRAM_ID must be a numeric Telegram user id");

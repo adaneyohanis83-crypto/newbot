@@ -31,7 +31,7 @@ export function createBotContext(api, options = {}) {
     env,
     repository: options.repository ?? createDefaultRepository(env),
     bot1Username: normalizeUsername(env.BOT1_USERNAME),
-    bot2Username: normalizeUsername(env.BOT2_USERNAME),
+    bot2Username: null, // single-bot mode — no Bot 2
     adminIds: parseAdminIds(env.ADMIN_TELEGRAM_ID),
   };
 }

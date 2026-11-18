@@ -41,7 +41,7 @@ export function selectionText(pkg, state) {
     `💰 Price: ${starsPrice(pkg)}`,
   ];
 
-  if (!state.payable || !state.usernameReady) {
+  if (!state.payable) {
     lines.push("", "⚠️ This category is not available for payment yet.");
   }
 

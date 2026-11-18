@@ -94,29 +94,28 @@ describe("parseUpdate", () => {
 // dedupe
 // ---------------------------------------------------------------------------
 describe("dedupe", () => {
-  it("returns false for an unseen update", () => {
+  it("returns false for an unseen update", async () => {
     resetSeenUpdates();
-    assert.ok(!hasSeenUpdate("testbot", 100));
+    assert.ok(!await hasSeenUpdate("testbot", 100));
   });
 
-  it("returns true after an update is remembered", () => {
+  it("returns true after an update is remembered", async () => {
     resetSeenUpdates();
-    rememberUpdate("testbot", 200);
-    assert.ok(hasSeenUpdate("testbot", 200));
+    await rememberUpdate("testbot", 200);
+    assert.ok(await hasSeenUpdate("testbot", 200));
   });
 
-  it("does not cross-contaminate bot names", () => {
+  it("does not cross-contaminate bot names", async () => {
     resetSeenUpdates();
-    rememberUpdate("bot1", 300);
-    assert.ok(!hasSeenUpdate("bot2", 300));
+    await rememberUpdate("bot1", 300);
+    assert.ok(!await hasSeenUpdate("bot2", 300));
   });
 
-  it("keeps only the last MAX_SEEN entries", () => {
+  it("keeps only the last MAX_SEEN entries", async () => {
     resetSeenUpdates();
-    for (let i = 0; i < 510; i++) rememberUpdate("cap-test", i);
-    // Entries 0–9 should have been dropped; 500–509 should be present
-    assert.ok(!hasSeenUpdate("cap-test", 0), "Early entry should have been evicted");
-    assert.ok(hasSeenUpdate("cap-test", 509), "Latest entry should be present");
+    for (let i = 0; i < 510; i++) await rememberUpdate("cap-test", i);
+    assert.ok(!await hasSeenUpdate("cap-test", 0), "Early entry should have been evicted");
+    assert.ok(await hasSeenUpdate("cap-test", 509), "Latest entry should be present");
   });
 });
 
